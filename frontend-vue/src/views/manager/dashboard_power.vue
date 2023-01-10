@@ -25,6 +25,15 @@
                 />
             </div>
           </CCard>
+          <CCard>
+            <div class="sensor-detail-container-2">
+                <highcharts
+                        constructor-type="chart"
+                        :options="chart6Option_osci_2"
+                        class="hi-weight"
+                />
+            </div>
+          </CCard>          
         </v-app>
         <!--    <div class="sensor-detail-container-2">-->
         <!--      <highcharts-->
@@ -104,6 +113,19 @@ export default {
           }))
         }
         
+        if(data.sensor_list_2.length > 0) {
+          this.cncosci_data_objs.cate_2 = data.sensor_list_2.map(v => v.created_date.slice(-8))
+          this.cncosci_data_objs.osci_2 = data.sensor_list_2.map((v, index) => ({
+            x: v.index,
+            y_1: Number(JSON.parse(v.data_msg).msg.split(',')[1]),
+            y_2: Number(JSON.parse(v.data_msg).msg.split(',')[2]),
+            y_3: Number(JSON.parse(v.data_msg).msg.split(',')[3]),
+            y_4: Number(JSON.parse(v.data_msg).msg.split(',')[4]),
+            y_5: Number(JSON.parse(v.data_msg).msg.split(',')[5]),
+            y_6: Number(JSON.parse(v.data_msg).msg.split(',')[6]),
+            y_7: Number(JSON.parse(v.data_msg).msg.split(',')[7]) * 1000
+          }))
+        }        
         console.log("data=> cnt : " + this.refresh_cnt + ",$route.path : " + this.$route.path)
         this.refresh_cnt += 1
         if(this.$route.path == '/manager/dashboard_power')
@@ -140,15 +162,22 @@ export default {
             obj.series[6].data = this.cncosci_data_objs.osci_1.map(v => v.y_7)
 
             obj.xAxis[0].categories = this.cncosci_data_objs.cate_1
-            obj.yAxis[0].title.text = '전력센서'
+            obj.yAxis[0].title.text = '전력센서 1번'
             return obj
         },
         chart6Option_osci_2() {
-          let obj = _.cloneDeep(chartOptions)
-          obj.series[0].data = this.cncosci_data_objs.osci_2.map(v => v.y)
-          obj.xAxis[0].categories = this.cncosci_data_objs.cate_2
-          obj.yAxis[0].title.text = 'CNC 2번 진동'
-          return obj
+            let obj = _.cloneDeep(chartOptions)
+            obj.series[0].data = this.cncosci_data_objs.osci_2.map(v => v.y_1)
+            obj.series[1].data = this.cncosci_data_objs.osci_2.map(v => v.y_2)
+            obj.series[2].data = this.cncosci_data_objs.osci_2.map(v => v.y_3)
+            obj.series[3].data = this.cncosci_data_objs.osci_2.map(v => v.y_4)
+            obj.series[4].data = this.cncosci_data_objs.osci_2.map(v => v.y_5)
+            obj.series[5].data = this.cncosci_data_objs.osci_2.map(v => v.y_6)
+            obj.series[6].data = this.cncosci_data_objs.osci_2.map(v => v.y_7)
+
+            obj.xAxis[0].categories = this.cncosci_data_objs.cate_2
+            obj.yAxis[0].title.text = '전력센서 2번'
+            return obj
         },
 
         // refresh_home () {
@@ -194,7 +223,7 @@ export default {
 </script>
 <style scoped lang="scss">
     .sr-card-app {
-        height: 350px;
+        height: 400px;
     }
 
     .sr-card-app-title {
@@ -235,6 +264,6 @@ export default {
     }
 
     .hi-weight {
-        height: 600px;
+        height: 400px;
     }
 </style>

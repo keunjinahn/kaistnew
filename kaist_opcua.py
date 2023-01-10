@@ -68,8 +68,10 @@ OPCUA_CSTRING_2 = config['OPCUA_CSTRING_2']
 POWER_DATA_PATH = config['POWER_DATA_PATH']
 POWER_USE_1 = int(config['POWER_USE_1'])
 POWER_1_IP = config['POWER_1_IP']
+POWER_USE_2 = int(config['POWER_USE_2'])
+POWER_2_IP = config['POWER_2_IP']
 print("DATA_PATH :",DATA_PATH,",AGENT_TYPE :",AGENT_TYPE,",AGENT_NUM:",AGENT_NUM,",DBSERVER_IP :",DBSERVER_IP)
-print("POWER_DATA_PATH :",POWER_DATA_PATH,",POWER_USE_1 :",POWER_USE_1,",POWER_1_IP:",POWER_1_IP)
+print("POWER_DATA_PATH :",POWER_DATA_PATH,",POWER_USE_1 :",POWER_USE_1,",POWER_1_IP:",POWER_1_IP,",POWER_USE_2 :",POWER_USE_2,",POWER_2_IP:",POWER_2_IP)
 
 class KaistOpcua(object):
     def __init__(self, logger=None):
@@ -191,7 +193,7 @@ class KaistOpcua(object):
             cursor.execute(sql_insert_data)
         except:
             print("opcua connect except!")
-            self.capture_idx = 300
+            #self.capture_idx = 300
             pass
         finally:
             pass
@@ -201,66 +203,67 @@ class KaistOpcua(object):
     def proc_power(self,ipaddress,sensor_num):
         now = datetime.now()
         cursor = self.get_cursor()
-        #try:
-        sTimeStamp = now.strftime("%Y-%m-%d %H:%M:%S")
-        sValue = round(random.uniform(30.0,80.0), 1)
-        file_name = '{0}_EA_{1}.txt'.format(ipaddress,now.strftime("%Y%m%d"))
-        file_name_path = '{0}{1}'.format(POWER_DATA_PATH,file_name)
-        
-        print("file_name :",file_name_path)    
-        with open(file_name_path,'r') as file_data_r :
-            lines = file_data_r.readlines()
+        try:
+            sTimeStamp = now.strftime("%Y-%m-%d %H:%M:%S")
+            sValue = round(random.uniform(30.0,80.0), 1)
+            file_name = '{0}_EA_{1}.txt'.format(ipaddress,now.strftime("%Y%m%d"))
+            file_name_path = '{0}{1}'.format(POWER_DATA_PATH,file_name)
 
-            sql_isexist = "SELECT * FROM tb_sensor_files WHERE file_names='{0}' AND sensor_type='POWER' AND sensor_num={1} ".format(file_name,int(sensor_num))
-            print("sql_isexist :",sql_isexist)
-            cursor.execute(sql_isexist)
-            recv_data = [row for row in cursor.fetchall()]
-            print("recv_data 1:",recv_data)
-            if len(recv_data) == 0 :
-                sql_insert = '''
-                    INSERT INTO tb_sensor_files(file_names,sensor_type,sensor_num,created_date) values('{0}','POWER',{1},now())
-                    '''.format(file_name,int(sensor_num))
-                print("sql_insert :",sql_insert)
-                cursor.execute(sql_insert)
+            print("file_name :",file_name_path)
+            with open(file_name_path,'r') as file_data_r :
+                lines = file_data_r.readlines()
+
+                sql_isexist = "SELECT * FROM tb_sensor_files WHERE file_names='{0}' AND sensor_type='POWER' AND sensor_num={1} ".format(file_name,int(sensor_num))
+                print("sql_isexist :",sql_isexist)
                 cursor.execute(sql_isexist)
                 recv_data = [row for row in cursor.fetchall()]
-                print("recv_data 2:",recv_data)
+                print("recv_data 1:",recv_data)
+                if len(recv_data) == 0 :
+                    sql_insert = '''
+                        INSERT INTO tb_sensor_files(file_names,sensor_type,sensor_num,created_date) values('{0}','POWER',{1},now())
+                        '''.format(file_name,int(sensor_num))
+                    print("sql_insert :",sql_insert)
+                    cursor.execute(sql_insert)
+                    cursor.execute(sql_isexist)
+                    recv_data = [row for row in cursor.fetchall()]
+                    print("recv_data 2:",recv_data)
 
-            fk_sensor_file_id = recv_data[0]['id']
-            print("fk_sensor_file_id :",fk_sensor_file_id)
+                fk_sensor_file_id = recv_data[0]['id']
+                print("fk_sensor_file_id :",fk_sensor_file_id)
 
-            
-            sql_islast = "SELECT created_date FROM tb_sensor_data WHERE fk_sensor_file_id={0} order by id desc limit 1 ".format(fk_sensor_file_id)
-            print("sql_islast :",sql_islast)
-            cursor.execute(sql_islast)
-            recv_data = [row for row in cursor.fetchall()]
-            print("recv_data 1:",recv_data)
-            last_date = datetime.now()
-            if len(recv_data) != 0 :
-                print("recv_data[0]['created_date'] :, ",recv_data[0]['created_date'])
-                last_date = recv_data[0]['created_date']
-            
-            line = '{0},{1}'.format(sTimeStamp,sValue)
-            for line in lines :
-                lineArray = line.split(',')
-                timeArray = lineArray[0].split('-')
-                strNow = "{0}-{1}-{2} {3}:{4}:{5}".format(timeArray[0],timeArray[1],timeArray[2],timeArray[3],timeArray[4],timeArray[5])
-                if last_date  >= datetime.strptime(strNow,'%Y-%m-%d %H:%M:%S') :
-                    continue
-                print("line :",line)
-                obj = {
-                    "msg":str(line)
-                }
-                data_msg = json.dumps(obj)
-                sql_insert_data = '''
-                    INSERT INTO tb_sensor_data(data_msg,created_date,fk_sensor_file_id) values('{0}','{1}','{2}')
-                    '''.format(data_msg,strNow,fk_sensor_file_id)
-                cursor.execute(sql_insert_data)
-        # except:
-        #     print("opcua connect except!")
-        #     pass
-        # finally:
-        #     pass
+
+                sql_islast = "SELECT created_date FROM tb_sensor_data WHERE fk_sensor_file_id={0} order by id desc limit 1 ".format(fk_sensor_file_id)
+                print("sql_islast :",sql_islast)
+                cursor.execute(sql_islast)
+                recv_data = [row for row in cursor.fetchall()]
+                print("recv_data 1:",recv_data)
+                last_date = datetime.now()
+                if len(recv_data) != 0 :
+                    print("recv_data[0]['created_date'] :, ",recv_data[0]['created_date'])
+                    last_date = recv_data[0]['created_date']
+
+                line = '{0},{1}'.format(sTimeStamp,sValue)
+                for line in lines :
+                    lineArray = line.split(',')
+                    timeArray = lineArray[0].split('-')
+                    strNow = "{0}-{1}-{2} {3}:{4}:{5}".format(timeArray[0],timeArray[1],timeArray[2],timeArray[3],timeArray[4],timeArray[5])
+                    #print("line :", line,"now :",strNow,",last_date :",last_date)
+                    if last_date > datetime.strptime(strNow,'%Y-%m-%d %H:%M:%S'):
+                        continue
+                    print("line :",line)
+                    obj = {
+                        "msg":str(line)
+                    }
+                    data_msg = json.dumps(obj)
+                    sql_insert_data = '''
+                        INSERT INTO tb_sensor_data(data_msg,created_date,fk_sensor_file_id) values('{0}','{1}','{2}')
+                        '''.format(data_msg,strNow,fk_sensor_file_id)
+                    cursor.execute(sql_insert_data)
+        except:
+            print("daq connect except!")
+            pass
+        finally:
+            pass
 
         self.capture_idx += 1        
 
@@ -274,7 +277,7 @@ class KaistOpcua(object):
     def run(self):
         print("KaistOpcua run...")
         self.init_signal_handler()
-
+        self.connect_to_db()
         while self.is_running:
             if self.capture_idx >= 300:
                 if self.get_cursor() is not None :
@@ -306,18 +309,19 @@ class KaistOpcua(object):
                 self.capture_idx = 0
 
             
-            # if OPCUA_USE_1 == 1 :
-            #     self.proc_opcua(self.opcua_server_1,1)
-            # if OPCUA_USE_2 == 1 :
-            #     self.proc_opcua(self.opcua_server_2,2)
+            if OPCUA_USE_1 == 1 :
+                self.proc_opcua(self.opcua_server_1,1)
+            if OPCUA_USE_2 == 1 :
+                self.proc_opcua(self.opcua_server_2,2)
             
             if POWER_USE_1 == 1 :
-                self.connect_to_db()
+                #self.connect_to_db()
                 self.proc_power(POWER_1_IP,1)
+            if POWER_USE_2 == 1 :
+                #self.connect_to_db()
+                self.proc_power(POWER_2_IP,2)
 
-            print("capture_idx : ",self.capture_idx)
-
-
+            print("capture_idx : 1 ",self.capture_idx)
             for _ in range(OPCUA_INTERVAL):
                 if self.is_running:
                     time.sleep(1)

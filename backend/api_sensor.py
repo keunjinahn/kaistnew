@@ -250,6 +250,7 @@ def sensor_data_range_power_api():
     print("input: ",input)
     file_name = '{0}'.format(datetime.now().strftime("%Y%m%d"))
     sensor_list_1 = []
+    sensor_list_2 = []
     offset = 1
     offset_time = datetime.now() - timedelta(minutes=1)
     if range_value == 1 :
@@ -276,8 +277,21 @@ def sensor_data_range_power_api():
                 "created_date":sensor_data.created_date.strftime("%Y-%m-%d %H:%M:%S")
             })
         print(" sensor_list_1 len  : ", len(sensor_list_1))
+    sensor_file_2 = SensorFiles.query.filter_by(sensor_type='POWER').filter_by(sensor_num=2).filter(SensorFiles.file_names.like('%' + file_name+ '%')).first()
+    if sensor_file_2 is not None :
+        print(" sensor_file_2 : ", sensor_file_2.file_names)
+        sensor_data_list_2 = SensorData.query.filter_by(fk_sensor_file_id=sensor_file_2.id).filter(SensorData.created_date > offset_time).filter(SensorData.created_date <= datetime.now()).all()
+        for index,sensor_data in enumerate(sensor_data_list_2):
+            if range_value != 4 and index % offset == 0:
+                continue
+            sensor_list_2.append({
+                "data_msg":sensor_data.data_msg.replace('\n',''),
+                "created_date":sensor_data.created_date.strftime("%Y-%m-%d %H:%M:%S")
+            })
+        print(" sensor_list_2 len  : ", len(sensor_list_2))        
     result_obj = {
         "sensor_list_1":sensor_list_1,
+        "sensor_list_2":sensor_list_2,
     }
 #     print("result_obj:",result_obj)
     return make_response(jsonify(result_obj), 200)        
